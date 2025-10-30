@@ -7,7 +7,24 @@ import { createClient } from "@supabase/supabase-js";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+
+
+const corsOptions = {
+    // 1. Especifica el origen (Origin) que debe ser permitido:
+    //    Para desarrollo, usa el puerto de tu frontend (http://localhost:5173).
+    //    Para producción, usarías el dominio de tu frontend desplegado (ej: https://tudominio.com).
+    origin: "http://localhost:5173",
+
+    // 2. Permite credenciales (credentials):
+    //    Debe ser 'true' para que coincida con 'credentials: "include"' en el frontend.
+    credentials: true,
+
+    // 3. Opcional: Especificar los métodos HTTP permitidos
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Conexión Supabase

@@ -11,17 +11,20 @@ const app = express();
 
 
 const corsOptions = {
-    // 1. Especifica el origen (Origin) que debe ser permitido:
-    //    Para desarrollo, usa el puerto de tu frontend (http://localhost:5173).
-    //    Para producción, usarías el dominio de tu frontend desplegado (ej: https://tudominio.com).
-    origin: "http://localhost:5173",
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      "http://localhost:5173",
+      "https://alamedaboti.vercel.app"
+    ];
 
-    // 2. Permite credenciales (credentials):
-    //    Debe ser 'true' para que coincida con 'credentials: "include"' en el frontend.
-    credentials: true,
-
-    // 3. Opcional: Especificar los métodos HTTP permitidos
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS: origen no permitido"));
+    }
+  },
+  credentials: true,
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
 };
 
 app.use(cors(corsOptions));

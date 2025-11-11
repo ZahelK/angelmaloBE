@@ -33,6 +33,36 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 );
 
+// ... (después de la conexión de supabase)
+
+// MIDDLEWARE DE AUTENTICACIÓN
+const checkAuth = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).json({ error: "No se proveyó un token (No header)" });
+  }
+
+  const token = authHeader.split(" ")[1]; // "Bearer TOKEN" -> "TOKEN"
+
+  if (!token) {
+    return res.status(401).json({ error: "Token mal formado" });
+  }
+
+  // Aquí Supabase verifica el token
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+
+  if (error || !user) {
+    return res.status(401).json({ error: "Token inválido o expirado" });
+  }
+
+  // ¡Éxito! El token es válido.
+  // Adjuntamos el usuario a la request para usarlo en la ruta
+  req.user = user;
+  next(); // Pasa a la siguiente función (la ruta)
+};
+
+// ... (tus rutas públicas como /login, /api/form, etc.)
 // Ruta para guardar datos
 app.get("/", (req, res) => {
   res.send("✅ Servidor backend funcionando correctamente");
@@ -79,6 +109,33 @@ app.post("/login", async (req, res) => {
     session: data.session // <-- AÑADE ESTO
   });
 });
+
+
+// --- RUTAS PROTEGIDAS ---
+// Ahora puedes crear rutas que SOLO usuarios logueados pueden consumir.
+
+// Ejemplo de ruta protegida:
+app.get("/api/dashboard-data", checkAuth, (req, res) => {
+  // Gracias al middleware checkAuth, este código solo se ejecuta
+  // si el token es válido.
+
+  // Además, tenemos acceso al usuario desde req.user
+  console.log("Usuario que hace la petición:", req.user.email);
+  
+  res.json({ 
+    message: `Hola ${req.user.email}, esta es tu información secreta.`,
+    data: [
+      { id: 1, item: "Dato secreto 1" },
+      { id: 2, item: "Dato secreto 2" }
+    ]
+  });
+});
+
+
+// ... (resto de tu código, como app.listen)
+
+
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Servidor en puerto ${PORT}`));

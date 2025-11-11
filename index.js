@@ -3,18 +3,15 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 
-
 dotenv.config();
 
 const app = express();
 
-
-
 const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
-      "http://localhost:5173",
-      "https://alamedaboti.vercel.app"
+      "http://localhost:5173", // Asegúrate de que el puerto de Vite esté aquí
+      "https://alamedaboti.vercel.app",
     ];
 
     if (!origin || allowedOrigins.includes(origin)) {
@@ -60,51 +57,28 @@ app.post("/api/form", async (req, res) => {
   res.json({ success: true, data });
 });
 
-// --- LOGIN ---
+// --- LOGIN (Modificado) ---
 app.post("/login", async (req, res) => {
-  const { email, password, fingerprint } = req.body;
+  const { email, password } = req.body; // Se eliminó fingerprint
 
   // 1️⃣ Iniciar sesión
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error || !data.user)
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error || !data.user) {
     return res.status(401).json({ error: "Correo o contraseña incorrectos" });
-
-  const user = data.user;
-
-  // 2️⃣ Buscar si ya hay una huella registrada
-  const { data: existing, error: selectErr } = await supabase
-    .from("device_fingerprints")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
-
-  if (selectErr && selectErr.code !== "PGRST116") {
-    return res.status(500).json({ error: "Error al verificar dispositivo" });
   }
 
-  // 3️⃣ Si no hay huella → registrar la actual
-  if (!existing) {
-    const { error: insertErr } = await supabase
-      .from("device_fingerprints")
-      .insert({ user_id: user.id, fingerprint });
+  // 2️⃣ Se eliminó toda la lógica de la huella digital
 
-    if (insertErr) return res.status(500).json({ error: "Error al registrar dispositivo" });
-    return res.json({ message: "Primer acceso desde este dispositivo autorizado", user });
-  }
-
-  // 4️⃣ Si ya hay huella, verificar coincidencia
-  if (existing.fingerprint !== fingerprint) {
-    return res
-      .status(403)
-      .json({ error: "Acceso bloqueado: este usuario solo puede iniciar sesión desde su dispositivo autorizado." });
-  }
-
-  res.json({ message: "Inicio de sesión exitoso", user });
+  // 3️⃣ Devolver el usuario si el inicio de sesión es exitoso
+  res.json({ message: "Inicio de sesión exitoso", user: data.user });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Servidor en puerto ${PORT}`));
-
 
 async function testSupabase() {
   try {

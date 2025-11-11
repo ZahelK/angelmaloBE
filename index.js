@@ -59,22 +59,25 @@ app.post("/api/form", async (req, res) => {
 
 // --- LOGIN (Modificado) ---
 app.post("/login", async (req, res) => {
-  const { email, password } = req.body; // Se eliminó fingerprint
+  const { email, password } = req.body; 
 
-  // 1️⃣ Iniciar sesión
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
-
+  
   if (error || !data.user) {
     return res.status(401).json({ error: "Correo o contraseña incorrectos" });
   }
 
-  // 2️⃣ Se eliminó toda la lógica de la huella digital
-
-  // 3️⃣ Devolver el usuario si el inicio de sesión es exitoso
-  res.json({ message: "Inicio de sesión exitoso", user: data.user });
+  // ¡CAMBIO CLAVE!
+  // Devuelve el usuario Y la sesión completa.
+  // data.session contiene el access_token (el JWT)
+  res.json({ 
+    message: "Inicio de sesión exitoso", 
+    user: data.user,
+    session: data.session // <-- AÑADE ESTO
+  });
 });
 
 const PORT = process.env.PORT || 3000;
